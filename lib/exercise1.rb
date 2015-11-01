@@ -60,25 +60,27 @@ class Exercise1
   end
 
   def best_match pop
-    pop.max{|a,b| a.fitness <=> b.fitness}
+    pop.max { |a, b| a.fitness <=> b.fitness }
   end
 
   def worst_match pop
-    pop.min{|a,b| a.fitness <=> b.fitness}
+    pop.min { |a, b| a.fitness <=> b.fitness }
   end
 
   def next_generation
     new_popu = []
     while new_popu.length < @ip
       a, b = select_pair
-      child1, child2 = crossover(a, b)
+      child1, child2= crossover(a, b)
       new_popu.push(child1, child2)
     end
     raise("population exceeded exptected value") if new_popu.length > @ip
+    # binding.pry
     new_popu.each_with_index { |el, i| new_popu[i]= mutate(el) if Random.rand() <= @pm }
+    # binding.pry if new_popu.nil?
     n_best_match = best_match(new_popu)
     if n_best_match.fitness < best_match(@elements).fitness
-      new_popu.reject!(worst_match(new_popu))
+      new_popu.reject! { |e| e==worst_match(new_popu) }
       new_popu << n_best_match
     end
     @selected= []
@@ -86,7 +88,8 @@ class Exercise1
   end
 
   def run
-    @itc.times do
+    @itc.times do |i|
+      puts "best match in gen (#{i}): #{best_match(@elements).fitness}."
       next_generation
     end
 
@@ -99,16 +102,25 @@ class Exercise1
     if r <= @pc
       a1= a.elem
       b1= b.elem
-      a.elem = b1 & 0xFF00 + a1&0x00FF
-      b.elem = a1 & 0xFF00 + b1&0x00FF
+      var1 = a1 & ("01" * 8).to_i(2)
+      var2 = b1 & ("10" * 8).to_i(2)
+      new_fit = Element.new(var1+var2)
+      a11 = new_fit if new_fit.fitness > a.fitness and new_fit.fitness > b.fitness
 
-      puts a.x, a.y
-      puts b.x, b.y
+      var1 = a1 & ("10" * 8).to_i(2)
+      var2 = b1 & ("01" * 8).to_i(2)
+      new_fit = Element.new(var1+var2)
+      b11 = new_fit if new_fit.fitness > a.fitness and new_fit.fitness > b.fitness
+      # b11 = Element.new(a1 & 0x0F00 + b1&0x00FF)
+      # a11= a11.fitness> a.fitness ? a11 : a;
+      # b11= b11.fitness> b.fitness ? b11 : b;
     end
-    return a, b
+    # binding.pry if a11.nil? or b11.nil?
+    return a11||a, b11||b
   end
 
   def mutate el
+    binding.pry if el.nil?
     r = Random.rand(16)
     bin = el.elem.to_s(2).rjust(16, '0')[r]= el.elem.to_s(2).rjust(16, '0')
     bin[r] == 0 ? '1' : '0'
