@@ -9,52 +9,59 @@ class Exercise1
   end
 
   def generate
-    @popu= (0..@ip).map { Random.rand(0..65535) }
+    @popu= (1..@ip).map { SecureRandom.random_number(65535) }
     @elements= []
     @elements= @popu.map { |el| Element.new(el) }
     calc_f_ratio
   end
 
   def calc_f_ratio
-    fit_sum = @elements.reduce(0) { |sum, el| sum+=el.fitness }
+    binding.pry
+    min1= @elements.map(&:fitness).min
+    fit_sum = @elements.reduce(0) { |sum, el| sum+=el.fitness+min1.abs }
     @elements.each do |el|
-      el.f_ratio = el.fitness/fit_sum
+      el.f_ratio = ((el.fitness+min1.abs)/fit_sum)
     end
+    @elements.reduce(0) do |sum, el|
+      sum += el.f_ratio
+      el.f_ratio = sum
+    end
+
+    # min = @elements.map(&:f_ratio).min
+    # @elements.each { |e| e.f_ratio+= min.abs } if min<0
   end
 
-  def select_pair
+  def select_next
     # binding.pry
-    first = Random.rand()
-    second = Random.rand()
-    @selected ||= []
+    first = SecureRandom.random_number()
+    second = SecureRandom.random_number()
+
     sorted = @elements.sort_by { |el| el.f_ratio }
-    pair1 = sorted.select { |el| el.f_ratio >= first }.first
+    pair1 = @elements.select { |el| el.f_ratio >= first }.first
     if pair1.nil?
       if first < sorted.map { |e| e.f_ratio }.min
         pair1= sorted.first
-      elsif first > sorted.map { |e| e.f_ratio }.min
+      elsif first > sorted.map { |e| e.f_ratio }.max
         pair1= sorted.last
       else
         raise("error in f_ratio ")
       end
     end
-    @selected << pair1
-    sorted2 = sorted.reject { |el| @selected.include?(el) }
-    pair2 = sorted2.select { |el| el.f_ratio >= second }.first
-    if sorted2.map { |e| e.f_ratio }.min.nil?
-      return pair1, pair1
-    end
+
+    pair2 = sorted.select { |el| el.f_ratio >= second }.first
+    # if sorted.map { |e| e.f_ratio }.min.nil?
+    #   return pair1, pair1
+    # end
     if pair2.nil?
-      if second < sorted2.map { |e| e.f_ratio }.min
-        pair2= sorted2.first
-      elsif second > sorted2.map { |e| e.f_ratio }.min
-        pair2= sorted2.last
+      if second < sorted.map { |e| e.f_ratio }.min
+        pair2= sorted.first
+      elsif second > sorted.map { |e| e.f_ratio }.max
+        pair2= sorted.last
       else
         raise("error in f_ratio ")
       end
     end
 
-    @selected << pair2
     binding.pry if pair1.nil? or pair2.nil?
     return pair1, pair2
   end
@@ -68,61 +75,56 @@ class Exercise1
   end
 
   def next_generation
+    # binding.pry
     new_popu = []
     while new_popu.length < @ip
-      a, b = select_pair
-      child1, child2= crossover(a, b)
-      new_popu.push(child1, child2)
+      a, b = select_next
+      child1= crossover(a, b)
+      new_popu.push(child1) #unless new_popu.include? child1
     end
-    raise("population exceeded exptected value") if new_popu.length > @ip
     # binding.pry
-    new_popu.each_with_index { |el, i| new_popu[i]= mutate(el) if Random.rand() <= @pm }
-    # binding.pry if new_popu.nil?
-    n_best_match = best_match(new_popu)
-    if n_best_match.fitness < best_match(@elements).fitness
-      new_popu.reject! { |e| e==worst_match(new_popu) }
-      new_popu << n_best_match
-    end
-    @selected= []
+
+    raise("population exceeded exptected value") if new_popu.length > @ip
+    new_popu.each_with_index { |el, i| new_popu[i]= mutate(el) if SecureRandom.random_number() <= @pm }
+
+    # n_best_match = best_match(new_popu)
+    # if n_best_match.fitness < best_match(@elements).fitness
+    #   new_popu.reject! { |e| e==worst_match(new_popu) }
+    #   new_popu << n_best_match
+    # end
     @elements= new_popu
   end
 
   def run
     @itc.times do |i|
-      puts "best match in gen (#{i}): #{best_match(@elements).fitness}."
+      gibm = best_match(@elements)
+      puts "best match in gen (#{i}) for x=#{gibm.x}, y= #{gibm.y}, #{gibm.fitness}."
       next_generation
     end
 
     mx = @elements.max { |a, b| a.fitness <=> b.fitness }
-    puts "maximum value is x=#{mx.x}, y= #{mx.y}, fitness= #{mx.fitness}"
+    puts "maximum value for x=#{mx.x}, y= #{mx.y}, fitness= #{mx.fitness}"
   end
 
   def crossover a, b
-    r = Random.rand()
+    # binding.pry
+    r = SecureRandom.random_number()
+    ran= SecureRandom.random_number(7)
     if r <= @pc
       a1= a.elem
       b1= b.elem
-      var1 = a1 & ("01" * 8).to_i(2)
-      var2 = b1 & ("10" * 8).to_i(2)
-      new_fit = Element.new(var1+var2)
-      a11 = new_fit if new_fit.fitness > a.fitness and new_fit.fitness > b.fitness
 
-      var1 = a1 & ("10" * 8).to_i(2)
-      var2 = b1 & ("01" * 8).to_i(2)
-      new_fit = Element.new(var1+var2)
-      b11 = new_fit if new_fit.fitness > a.fitness and new_fit.fitness > b.fitness
-      # b11 = Element.new(a1 & 0x0F00 + b1&0x00FF)
-      # a11= a11.fitness> a.fitness ? a11 : a;
-      # b11= b11.fitness> b.fitness ? b11 : b;
+      var1 = a1.to_s(2)[0..ran] + b1.to_s(2)[ran..16]
+      new_fit = Element.new(var1.to_i(2))
+      a11 = new_fit if new_fit.fitness > a.fitness and new_fit.fitness > b.fitness
     end
-    # binding.pry if a11.nil? or b11.nil?
-    return a11||a, b11||b
+
+    return a11||a
   end
 
   def mutate el
-    binding.pry if el.nil?
-    r = Random.rand(16)
-    bin = el.elem.to_s(2).rjust(16, '0')[r]= el.elem.to_s(2).rjust(16, '0')
+    r = SecureRandom.random_number(16)
+    bin = el.elem.to_s(2).rjust(16, '0')
     bin[r] == 0 ? '1' : '0'
     el.elem= bin.to_i(2)
     el
@@ -132,9 +134,13 @@ end
 
 #xf 101.02824551412276
 #yf 92.32139366069683
+#x -0.622866
+#y -0.827733
+#x -3.0146556632604
+#y -2.9805239391498
 
 class Element
-  attr_accessor :elem, :f_ratio, :x, :y
+  attr_accessor :elem, :f_ratio, :x, :y, :fitness
 
   def initialize elem
     @f_ratio = 0
