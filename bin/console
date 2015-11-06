@@ -2,6 +2,9 @@
 
 require "bundler/setup"
 require "AI_exercise1"
+require 'ostruct'
+require 'optparse'
+
 
 # You can add fixtures and/or initialization code here to make experimenting
 # with your gem easier. You can also use a different console, if you like.
@@ -9,4 +12,21 @@ require "AI_exercise1"
 # (If you use this, don't forget to add pry to your Gemfile!)
 
 require "pry"
-Pry.start
+
+options = OpenStruct.new
+options.ip = 20
+options.pm = 0.01
+options.pc = 0.7
+options.itc = 100
+
+opts = OptionParser.new do |opts|
+  opts.on("-p", "--population POPULATION", Integer, "Require initial population size") { |ip| options.ip = ip }
+  opts.on("-c", "--crossover CROSSOVER", Float, "Require crossover probablity") { |pc| options.pc = pc }
+  opts.on("-m", "--mutation MUTATION", Float, "Require mutation probablity") { |pm| options.pm= pm }
+  opts.on("-i", "--iterations ITERATIONS", Integer, "Require iterations count") { |itc| options.itc= itc }
+end
+
+opts.parse!(ARGV)
+
+instance= AIExercise1::Exercise1.new(options.pm, options.pc, options.ip, options.itc)
+instance.run
