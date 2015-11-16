@@ -1,5 +1,6 @@
 require "AI_exercise1/version"
 require_relative 'element.rb'
+require_relative 'visualization'
 
 module AIExercise1
 
@@ -15,6 +16,7 @@ module AIExercise1
 
     def initialize pm, pc, ip, itc
       @pm, @pc, @ip, @itc= pm, pc, ip, itc
+      @visu= Visualization.new
       generate
     end
 
@@ -67,7 +69,11 @@ module AIExercise1
       seed ? SecureRandom.random_number(seed) : SecureRandom.random_number()
     end
 
-    def next_generation
+    def next_generation i
+      # to move the plot to positive side of cartesian coordinates
+      visu_slide = 0.1
+      avg_fitness= elements.map { |e| e.fitness+visu_slide }.reduce(&:+)/(elements.size+0.0)
+      @visu.runs << {best_fitness: best_match(@elements).fitness+visu_slide, avg_fitness: avg_fitness, generation: i}
       np= SortedSet.new
       while np.length < @ip
         a, b = roll(), roll()
@@ -96,12 +102,14 @@ module AIExercise1
         gibm = best_match(@elements)
         max = max < gibm.fitness ? gibm.fitness : max
         puts "best match in gen (#{i}) for x=#{gibm.x}, y= #{gibm.y}, #{gibm.fitness}."
-        next_generation
+        next_generation i
       end
 
       mx = @elements.max { |a, b| a.fitness <=> b.fitness }
       puts "best match ever: #{max}"
       puts "maximum value for x=#{mx.x}, y= #{mx.y}, fitness= #{mx.fitness}"
+
+      @visu.show
     end
 
     def crossover a, b
@@ -124,7 +132,6 @@ module AIExercise1
 
     def mutate el
       r = grand(15)
-      r1 = grand(15)
       bin = el.elem.to_s(2).rjust(16, '0')
       bin[r]= bin[r] == '0' ? '1' : '0'
       el.elem = bin.to_i(2)
