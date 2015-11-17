@@ -16,7 +16,7 @@ module AIExercise1
 
     def initialize pm, pc, ip, itc
       @pm, @pc, @ip, @itc= pm, pc, ip, itc
-      @visu= Visualization.new
+      # @visu= Visualization.new
       generate
     end
 
@@ -71,9 +71,9 @@ module AIExercise1
 
     def next_generation i
       # to move the plot to positive side of cartesian coordinates
-      visu_slide = 0.1
-      avg_fitness= elements.map { |e| e.fitness+visu_slide }.reduce(&:+)/(elements.size+0.0)
-      @visu.runs << {best_fitness: best_match(@elements).fitness+visu_slide, avg_fitness: avg_fitness, generation: i}
+      # visu_slide = 0.1
+      # avg_fitness= elements.map { |e| e.fitness+visu_slide }.reduce(&:+)/(elements.size+0.0)
+      # @visu.runs << {best_fitness: best_match(@elements).fitness+visu_slide, avg_fitness: avg_fitness, generation: i}
       np= SortedSet.new
       while np.length < @ip
         a, b = roll(), roll()
@@ -101,15 +101,16 @@ module AIExercise1
       @itc.times do |i|
         gibm = best_match(@elements)
         max = max < gibm.fitness ? gibm.fitness : max
-        puts "best match in gen (#{i}) for x=#{gibm.x}, y= #{gibm.y}, #{gibm.fitness}."
+        # puts "best match in gen (#{i}) for x=#{gibm.x}, y= #{gibm.y}, #{gibm.fitness}."
+        # puts "best match in gen (#{i}) #{gibm.fitness}."
         next_generation i
       end
 
       mx = @elements.max { |a, b| a.fitness <=> b.fitness }
       puts "best match ever: #{max}"
-      puts "maximum value for x=#{mx.x}, y= #{mx.y}, fitness= #{mx.fitness}"
-
-      @visu.show
+      # puts "maximum value for x=#{mx.x}, y= #{mx.y}, fitness= #{mx.fitness}"
+      mx.fitness
+      # @visu.show
     end
 
     def crossover a, b
@@ -118,16 +119,18 @@ module AIExercise1
       if r <= @pc
         a1= a.elem
         b1= b.elem
-        var1 = a1.to_s(2)[0..ran] + b1.to_s(2)[ran..16]
-        var2 = b1.to_s(2)[0..ran] + a1.to_s(2)[ran..16]
+        var1 = a1.to_s(2).rjust(16, '0')[0..ran] + b1.to_s(2).rjust(16, '0')[ran..16]
+        var2 = b1.to_s(2).rjust(16, '0')[0..ran] + a1.to_s(2).rjust(16, '0')[ran..16]
         element_new = Element.new(var1.to_i(2))
         a11 = element_new if element_new.fitness > a.fitness and element_new.fitness > b.fitness
         new = Element.new(var2.to_i(2))
         b11 = new if new.fitness > a.fitness and new.fitness > b.fitness
-
       end
 
       return a11||a, b11||b
+
+    # rescue
+    #   binding.pry
     end
 
     def mutate el
