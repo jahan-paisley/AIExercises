@@ -107,7 +107,7 @@ module AIExercise1
       end
 
       mx = @elements.max { |a, b| a.fitness <=> b.fitness }
-      puts "best match ever: #{max}"
+      # puts "best match ever: #{max}"
       # puts "maximum value for x=#{mx.x}, y= #{mx.y}, fitness= #{mx.fitness}"
       mx.fitness
       # @visu.show
