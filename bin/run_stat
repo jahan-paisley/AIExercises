@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "AI_exercise1"
+require 'ostruct'
+require 'optparse'
+require 'pry'
+require 'visualization1'
+
+options = OpenStruct.new
+options.ip = 20
+options.pm = 0.01
+options.pc = 0.7
+options.itc = 30
+
+opts = OptionParser.new do |opts|
+  opts.on("-p", "--population POPULATION", Integer, "Require initial population size") { |ip| options.ip = ip }
+  opts.on("-c", "--crossover CROSSOVER", Float, "Require crossover probablity") { |pc| options.pc = pc }
+  opts.on("-m", "--mutation MUTATION", Float, "Require mutation probablity") { |pm| options.pm= pm }
+  opts.on("-i", "--iterations ITERATIONS", Integer, "Require iterations count") { |itc| options.itc= itc }
+end
+
+opts.parse!(ARGV)
+
+runs_agg= []
+
+(1..40).each do |i|
+  run_agg= {itc: i, success: 0}
+  (1..20).each do |_|
+    inst= AIExercise1::Exercise1.new(options.pm, options.pc, options.ip, i)
+    run_agg[:success]= (inst.run > 1.5) ? run_agg[:success]+1 : run_agg[:success]
+  end
+  runs_agg<< run_agg
+end
+
+
+puts runs_agg
+visu= Visualization1.new runs_agg
+visu.show
